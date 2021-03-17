@@ -2,6 +2,9 @@
 // https://github.com/muqui/reloj_digital_arduino/blob/master/reloj_esp8266_neopixel.ino
 //Libreria usadas neopixel
 //placa esp8266
+//Version ESP8266 community version 2.7.3
+//NOTAS:
+//Para suber el codigo es necesario desconecar el moduo bluetooth, de lo contrario es imposible cargar el codigo
 
 #include <NTPClient.h>
 #include <ESP8266WiFi.h>
@@ -63,7 +66,7 @@ static String getEpochStringMinuto(long time, char* pattern = (char *)"%M"){
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org", utcOffsetInSeconds);
 // Central European Time (Frankfurt, Paris)
-TimeChangeRule CDT = { "CDT", Second, Sun, Mar, 2, -300 };    //Daylight time = UTC - 5 hours
+TimeChangeRule CDT = { "CDT", First, Sun, Apr, 2, -300 };    //Daylight time = UTC - 5 hours
 TimeChangeRule CST = { "CST", Last, Sun, Oct, 2, -360 };     //Standard time = UTC - 6 hours
 Timezone CE(CDT, CST);
 Adafruit_NeoPixel tira = Adafruit_NeoPixel(32, 2, NEO_GRB + NEO_KHZ800); // creacion de objeto "tira"  // pin 2 es D4
@@ -72,9 +75,12 @@ uint32_t magenta = tira.Color(255, 0, 255);   // cada pixel en color azul (R,G,B
 uint32_t rojo = tira.Color(255, 0, 0);
 uint32_t verde = tira.Color(0, 255, 0);
 uint32_t azul = tira.Color(0, 0, 255);
+uint32_t blanco = tira.Color(255, 255, 255);
 uint32_t color = rojo;
+char dato; // Carácter que recibimos por bluetooth
+String comando; // Comando que generamos con los caracteres
 void setup(){
-  Serial.begin(115200);
+  Serial.begin(9600);
    tira.begin();       // inicializacion de la tira
   tira.show();        // muestra datos en pixel
   
@@ -98,8 +104,88 @@ void setup(){
      Serial.print ( "NTP Update not WORK!!" );
   }
 }
-
+// Lee el puerto serie hasta recibir el último carácter
+void LeerPuertoSerie() {
+ comando = "";
+ while(Serial.available()){
+    delay(10);
+    if(Serial.available() > 0) {
+     dato = Serial.read();
+     comando += dato;
+    }
+ }  
+}
+void actualizar(){
+   numero(digito_1, 0);
+   numero(digito_2, 7);
+   numero(digito_3, 14);
+   numero(digito_4, 21);
+  }
 void loop() {
+   // lee los comandos por el puerto serie
+ LeerPuertoSerie();
+ if (comando.length() > 0) {
+  if(comando == "blanco") { //Accion
+    color = blanco;
+    actualizar();
+     Serial.println("rojo");
+    }
+    if(comando == "rojo") { //Accion
+    color = rojo;
+    actualizar();
+     Serial.println("rojo");
+    }
+    if(comando == "verde") { //Accion
+       color = verde;
+        actualizar();
+       Serial.println("verde");
+    }
+     if(comando == "azul") { //Accion
+        color = azul;
+         actualizar();
+         Serial.println("azul");
+    }
+    if(comando == "60") { //Accion
+        tira.setBrightness(60);
+        
+    }
+    if(comando == "80") { //Accion
+        tira.setBrightness(80);
+        
+    }
+     if(comando == "100") { //Accion
+        tira.setBrightness(100);
+        
+    }
+     if(comando == "120") { //Accion
+        tira.setBrightness(120);
+        
+    }
+     if(comando == "140") { //Accion
+        tira.setBrightness(140);
+        
+    }
+     if(comando == "160") { //Accion
+        tira.setBrightness(160);
+        
+    }
+    if(comando == "180") { //Accion
+        tira.setBrightness(180);
+        
+    }
+     if(comando == "200") { //Accion
+        tira.setBrightness(200);
+        
+    }
+     if(comando == "220") { //Accion
+        tira.setBrightness(220);
+        
+    }
+     if(comando == "250") { //Accion
+        tira.setBrightness(250);
+        
+    }
+ }
  // s = millis()/200;  
  //  timeClient.update();
 
@@ -164,12 +250,13 @@ void loop() {
   Serial.print(hora);
    Serial.print(" : " );
  Serial.println(minuto);
+ Serial.println(color);
 
 }
 
 void num_0(int digito){
    for(int i = 1; i < 7; i++){   // bucle para recorrer posiciones 0 a 7
-    tira.setPixelColor(i+digito, 0, 255, 0);   // cada pixel en color azul (posicion,R,G,B)
+    tira.setPixelColor(i+digito,color);   // cada pixel en color azul (posicion,R,G,B)
     tira.show();      // muestra datos en pixel 
    
   }
