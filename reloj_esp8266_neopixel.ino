@@ -5,7 +5,8 @@
 //Version ESP8266 community version 2.7.3
 //NOTAS:
 //Para suber el codigo es necesario desconecar el moduo bluetooth, de lo contrario es imposible cargar el codigo
-
+//NTPClient by fabrice
+//
 #include <NTPClient.h>
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
@@ -25,7 +26,6 @@ const char *password = "123456789";
 
 
 
-//const long utcOffsetInSeconds = -21600;
 const long utcOffsetInSeconds = 0;
 char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
 static tm getDateTimeByParams(long time){
@@ -49,14 +49,14 @@ static String getDateTimeStringByParamsMinuto(tm *newtime, char* pattern = (char
  
 
 static String getEpochStringHora(long time, char* pattern = (char *)"%H"){
-//    struct tm *newtime;
+
     tm newtime;
     newtime = getDateTimeByParams(time);
     return getDateTimeStringByParamsHora(&newtime, pattern);
 }
 
 static String getEpochStringMinuto(long time, char* pattern = (char *)"%M"){
-//    struct tm *newtime;
+
     tm newtime;
     newtime = getDateTimeByParams(time);
     return getDateTimeStringByParamsMinuto(&newtime, pattern);
@@ -65,7 +65,6 @@ static String getEpochStringMinuto(long time, char* pattern = (char *)"%M"){
 // Define NTP Client to get time
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org", utcOffsetInSeconds);
-// Central European Time (Frankfurt, Paris)
 TimeChangeRule CDT = { "CDT", First, Sun, Apr, 2, -300 };    //Daylight time = UTC - 5 hours
 TimeChangeRule CST = { "CST", Last, Sun, Oct, 2, -360 };     //Standard time = UTC - 6 hours
 Timezone CE(CDT, CST);
@@ -186,57 +185,54 @@ void loop() {
         
     }
  }
- // s = millis()/200;  
- //  timeClient.update();
+ 
 
-              // iniciado el programa y pasa a segundos
-//  hora =  timeClient.getHours(); 
-//  minuto =  timeClient.getMinutes(); 
   hora = getEpochStringHora(CE.toLocal(now())).toInt();
   minuto = getEpochStringMinuto(CE.toLocal(now())).toInt();
 
    int d_1 = minuto % 10;  
    int d_2 = (minuto/10) % 10;
   
- 
+ //Coloca la hora en formato 12 horas AM PM
   if (hora > 12){
-      hora = hora - 12;  
-     
+      hora = hora - 12;       
   }    
    int d_3 = hora % 10;
    int d_4 = (hora/10) % 10;
 
-   
+            // update the digit 
           if(digito_1 != d_1){
              apagar_digito(0);
            digito_1 = minuto % 10;
-            numero(digito_1, 0);
+            numero(digito_1, 0);  // 0 means  where beginning  firts digit. (Led 0 -6)
         }
-       // numero(digito_1, 0);
-
+      
+         // update the digit 
         if(digito_2 != d_2){
           apagar_digito(7);
           digito_2 = (minuto/10) % 10;
-          numero(digito_2, 7);
+          numero(digito_2, 7);  // 7 means  where beginning  second digit. (Led 7- 13 )
         }
-        //numero(digito_2, 7);
+         // update the digit 
          if(digito_3 != d_3){
           apagar_digito(14);
           digito_3 =  hora % 10;
-         numero(digito_3, 14);
+         numero(digito_3, 14);  // 14 means  where beginning  third digit. (Led 14- 20 )
         }
-       //  numero(digito_3, 14);
+          // turn on digit
          if(hora > 9){
            if(digito_4 != d_4){
           apagar_digito(21);
           digito_4 = (hora/10) % 10;
-         numero(digito_4, 21);
+         numero(digito_4, 21);  // 21 means  where beginning  fourth digit. (Led 21- 27)
         }
-          //numero(digito_4, 21);
-         }
-
+          //turn off digit
          else  
          apagar_digito(21);
+         
+         }
+
+        
         
     // led separador hora y minuto 
   tira.setPixelColor(28, color);   // cada pixel en color azul (posicion,R,G,B)
@@ -247,13 +243,18 @@ void loop() {
   tira.setPixelColor(29, 0, 0, 0);   // cada pixel en color azul (posicion,R,G,B)
     tira.show();      // muestra datos en pixel 
    delay ( 1000 );
-  Serial.print(hora);
+  Serial.print(digito_4);
+  Serial.print(" " );
+  Serial.print(digito_3);
    Serial.print(" : " );
- Serial.println(minuto);
- Serial.println(color);
+   Serial.print(digito_2);
+   Serial.print(" " );
+   Serial.print(digito_1);
+ Serial.println("");
+// Serial.println(color);
 
 }
-
+//draw  number 0
 void num_0(int digito){
    for(int i = 1; i < 7; i++){   // bucle para recorrer posiciones 0 a 7
     tira.setPixelColor(i+digito,color);   // cada pixel en color azul (posicion,R,G,B)
@@ -261,13 +262,14 @@ void num_0(int digito){
    
   }
 }
-
+//draw  number 1
 void num_1(int digito){
     tira.setPixelColor(3+digito,color);   // cada pixel en color azul (posicion,R,G,B)
      tira.setPixelColor(4+digito,color);   // cada pixel en color azul (posicion,R,G,B)
     tira.show();      // muestra datos en pixel 
    
 }
+//draw  number 2
 void num_2(int digito){
   tira.setPixelColor(2+digito,color);   // cada pixel en color azul (posicion,R,G,B)
      tira.setPixelColor(3+digito,color);   // cada pixel en color azul (posicion,R,G,B)
@@ -277,6 +279,7 @@ void num_2(int digito){
     tira.show();      // muestra datos en pixel 
    
 }
+//draw  number 3
 void num_3(int digito){
    tira.setPixelColor(2+digito, color);   // cada pixel en color azul (posicion,R,G,B)
      tira.setPixelColor(3+digito, color);   // cada pixel en color azul (posicion,R,G,B)
@@ -286,6 +289,7 @@ void num_3(int digito){
     tira.show();      // muestra datos en pixel 
    
 }
+//draw  number 4
 void num_4(int digito){
    tira.setPixelColor(0+digito,color);   // cada pixel en color azul (posicion,R,G,B)
      tira.setPixelColor(1+digito, color);   // cada pixel en color azul (posicion,R,G,B)
@@ -295,6 +299,7 @@ void num_4(int digito){
     tira.show();      // muestra datos en pixel 
    
 }
+//draw  number 5
 void num_5(int digito){
     tira.setPixelColor(2+digito,color);   // cada pixel en color azul (posicion,R,G,B)
      tira.setPixelColor(1+digito, color);   // cada pixel en color azul (posicion,R,G,B)
@@ -303,6 +308,7 @@ void num_5(int digito){
       tira.setPixelColor(5+digito, color);
     tira.show();      // muestra datos en pixel 
 }
+//draw  number 6
 void num_6(int digito){
      tira.setPixelColor(0+digito,color);   // cada pixel en color azul (posicion,R,G,B)
      tira.setPixelColor(1+digito, color);   // cada pixel en color azul (posicion,R,G,B)
@@ -315,12 +321,14 @@ void num_6(int digito){
     tira.show();      // muestra datos en pixel 
    
 }
+//draw  number 7
 void num_7(int digito){
       tira.setPixelColor(2+digito,color);   // cada pixel en color azul (posicion,R,G,B)
      tira.setPixelColor(3+digito, color);   // cada pixel en color azul (posicion,R,G,B)
       tira.setPixelColor(4+digito, color);
       tira.show();      // muestra datos en pixel 
 }
+//draw  number 8
 void num_8(int digito){
        for(int i = 0; i < 7; i++){   // bucle para recorrer posiciones 0 a 7
     tira.setPixelColor(i+digito,color);   // cada pixel en color azul (posicion,R,G,B)
@@ -328,6 +336,7 @@ void num_8(int digito){
    
   }
 }
+//draw  number 9
 void num_9(int digito){
      for(int i = 0; i < 6; i++){   // bucle para recorrer posiciones 0 a 7
     tira.setPixelColor(i+digito, color);   // cada pixel en color azul (posicion,R,G,B)
@@ -336,14 +345,14 @@ void num_9(int digito){
 
 }
 
-
+//turn off any digit.
 void apagar_digito(int digito){
      for(int i = 0; i < 7; i++){   // bucle para recorrer posiciones 0 a 7
     tira.setPixelColor(i+digito, 0, 0, 0);   // cada pixel en color azul (posicion,R,G,B)
     tira.show();      // muestra datos en pixel 
     }
 }
-
+// turn off all digits (all leds).
 void apagar(){
    for(int i = 0; i < 32; i++){   // bucle para recorrer posiciones 0 a 7
     tira.setPixelColor(i, 0, 0, 0);   // cada pixel en color azul (posicion,R,G,B)
